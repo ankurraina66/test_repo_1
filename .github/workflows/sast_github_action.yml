@@ -1,7 +1,10 @@
 name: "HCL AppScan SAST For GitHub"
 
 on:
-  workflow_dispatch
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
 
 jobs:
   scan:
