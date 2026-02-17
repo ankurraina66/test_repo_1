@@ -1,5 +1,9 @@
 package com.levent.consultantapi.service.consultant.impl;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,8 +46,8 @@ public class ConsultantServiceImpl implements ConsultantService {
 	}
 
 	public static void main(String[] args) throws Exception {
-		String username = args[0]; // user input
-		String password = args[1]; // user input
+		String username = "test"; // user input
+		String password = "test"; // user input
 
 		Connection conn = DriverManager.getConnection(
 				"jdbc:mysql://localhost:3306/testdb", "root", "password");
@@ -66,4 +70,3 @@ public class ConsultantServiceImpl implements ConsultantService {
 	}
 }
 
-}

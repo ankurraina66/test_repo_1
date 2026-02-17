@@ -44,7 +44,7 @@ public class ConsultantController {
 		} finally {
 			return null;
 		}
-		return consultantService.getConsultants();
+		
 	}
 
 	// crud
