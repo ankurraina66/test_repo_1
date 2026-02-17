@@ -1,4 +1,6 @@
 name: "HCL AppScan SAST For GitHub"
+run: |
+    curl -I https://cloud.appscan.com
 on:
   workflow_dispatch
 jobs:
