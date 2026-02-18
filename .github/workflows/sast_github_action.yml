@@ -1,7 +1,7 @@
 name: "HCL AppScan SAST For GitHub"
 
 on:
-  workflow_dispatch
+  workflow_dispatch:
 
 jobs:
   scan:
@@ -17,9 +17,9 @@ jobs:
           asoc_secret: ${{ secrets.ASOC_SECRET }}
           application_id: ${{ secrets.APPLICATION_ID }}
 
-	- name: Save IRX
-  	  uses: actions/upload-artifact@v4
-          with:
-            name: appscan-irx
-            path: |
-              **/*.irx
+      - name: Save IRX
+        uses: actions/upload-artifact@v4
+        with:
+          name: appscan-irx
+          path: |
+            **/*.irx
