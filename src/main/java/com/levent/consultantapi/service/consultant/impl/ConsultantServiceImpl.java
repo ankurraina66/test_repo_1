@@ -45,7 +45,7 @@ public class ConsultantServiceImpl implements ConsultantService {
 		return consultantRepository.delete(id);
 	}
 
-	public static void main() throws Exception {
+	public static void main1() throws Exception {
 		String username = "test"; // user input
 		String password = "test"; // user input
 
@@ -54,7 +54,6 @@ public class ConsultantServiceImpl implements ConsultantService {
 
 		Statement stmt = conn.createStatement();
 
-		// ❌ SQL Injection vulnerability
 		String sql = "SELECT * FROM users WHERE username = '"
 				+ username + "' AND password = '" + password + "'";
 

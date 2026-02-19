@@ -54,7 +54,7 @@ public class AppConfig {
 		}
 	}
 	
-	public static void run() throws Exception {
+	public static void newRun() throws Exception {
 		String username = "test"; // user input
 		String password = "test"; // user input
 
@@ -63,7 +63,6 @@ public class AppConfig {
 
 		Statement stmt = conn.createStatement();
 
-		// ❌ SQL Injection vulnerability
 		String sql = "SELECT * FROM users WHERE username = '"
 				+ username + "' AND password = '" + password + "'";
 
