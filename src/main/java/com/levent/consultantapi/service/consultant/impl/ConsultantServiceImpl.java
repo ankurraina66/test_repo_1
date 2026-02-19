@@ -45,7 +45,7 @@ public class ConsultantServiceImpl implements ConsultantService {
 		return consultantRepository.delete(id);
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static void main() throws Exception {
 		String username = "test"; // user input
 		String password = "test"; // user input
 

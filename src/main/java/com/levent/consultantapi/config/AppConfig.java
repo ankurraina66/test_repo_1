@@ -1,5 +1,10 @@
 package com.levent.consultantapi.config;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,6 +52,30 @@ public class AppConfig {
 				throw new IllegalStateException("No such implementation: " + impl);
 			}
 		}
+	}
+	
+	public static void run() throws Exception {
+		String username = "test"; // user input
+		String password = "test"; // user input
+
+		Connection conn = DriverManager.getConnection(
+				"jdbc:mysql://localhost:3306/testdb", "root", "password");
+
+		Statement stmt = conn.createStatement();
+
+		// ❌ SQL Injection vulnerability
+		String sql = "SELECT * FROM users WHERE username = '"
+				+ username + "' AND password = '" + password + "'";
+
+		ResultSet rs = stmt.executeQuery(sql);
+
+		if (rs.next()) {
+			System.out.println("Login successful");
+		} else {
+			System.out.println("Invalid credentials");
+		}
+
+		conn.close();
 	}
 
 }

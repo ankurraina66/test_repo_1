@@ -16,10 +16,3 @@ jobs:
           asoc_key: ${{ secrets.ASOC_KEY }}
           asoc_secret: ${{ secrets.ASOC_SECRET }}
           application_id: ${{ secrets.APPLICATION_ID }}
-
-      - name: Save IRX
-        uses: actions/upload-artifact@v4
-        with:
-          name: appscan-irx
-          path: |
-            **/*.irx
