@@ -46,6 +46,7 @@ public class ConsultantServiceImpl implements ConsultantService {
 	}
 
 	public static void main1() throws Exception {
+	System.out.println("Hurray------->");
 		String username = "test"; // user input
 		String password = "test"; // user input
 

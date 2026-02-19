@@ -54,7 +54,7 @@ public class AppConfig {
 		}
 	}
 	
-	public static void newRun() throws Exception {
+	public static void newER() throws Exception {
 		String username = "test"; // user input
 		String password = "test"; // user input
 
