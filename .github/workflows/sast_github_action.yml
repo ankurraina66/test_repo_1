@@ -1,4 +1,4 @@
-name: "HCL AppScan Action For GitHub With Key and Secret"
+name: "HCL AppScan Action For GitHub (ASoC)"
 
 on:
   workflow_dispatch:
@@ -13,6 +13,6 @@ jobs:
       - name: Run AppScan SAST scan
         uses: HCL-TECH-SOFTWARE/appscan-sast-action@v1.0.7
         with:
+          asoc_key: ${{ secrets.ASOC_KEY }}
+          asoc_secret: ${{ secrets.ASOC_SECRET }}
           application_id: ${{ secrets.APPLICATION_ID }}
-          service_url: ${{ secrets.SERVICE_URL }}
-          acceptssl: ${{ secrets.ACCEPTSSL }}
