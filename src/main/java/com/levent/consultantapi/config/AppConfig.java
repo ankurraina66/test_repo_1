@@ -54,7 +54,7 @@ public class AppConfig {
 		}
 	}
 	
-	public static void some123() throws Exception {
+	public static void some13() throws Exception {
 		String username = "test"; // user input
 		String password = "test"; // user input
 

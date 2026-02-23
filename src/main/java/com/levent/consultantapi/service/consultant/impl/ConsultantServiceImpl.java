@@ -45,7 +45,7 @@ public class ConsultantServiceImpl implements ConsultantService {
 		return consultantRepository.delete(id);
 	}
 
-	public static void main7878() throws Exception {
+	public static void main787() throws Exception {
 	System.out.println("Hurray------->");
 		String username = "test"; // user input
 		String password = "test"; // user input
