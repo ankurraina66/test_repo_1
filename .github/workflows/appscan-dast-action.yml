@@ -7,7 +7,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Run ASoC DAST Scan
+      - name: Run AppScan 360 DAST Scan
         uses: HCL-TECH-SOFTWARE/appscan-dast-action@v1.0.7
         with:
           baseurl:  https://blmycldtl446131.nonprod.hclpnp.com
