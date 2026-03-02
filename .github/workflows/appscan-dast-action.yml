@@ -14,6 +14,7 @@ jobs:
           asoc_key: ${{secrets.ASOC_KEY}}
           asoc_secret: ${{secrets.ASOC_SECRET}}
           application_id: ${{secrets.APPLICATION_ID}}
+          acceptssl: ${{secrets.ACCEPTSSL}}
           dynamic_scan_type: dast
           starting_URL: 'https://demo.testfire.net?mode=demo'
           login_method: userpass
