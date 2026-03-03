@@ -1,45 +1,30 @@
-name: "HCL AppScan DAST - basic (Local Patched)"
-
+name: "HCL AppScan DAST - basic"
 on:
   workflow_dispatch
-
 jobs:
   scan:
     runs-on: self-hosted
-
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Run ASoC DAST Scan (Local Patched Script)
-        shell: powershell
-        run: |
-          $scriptPath = "C:\Users\ankur.raina\actions-runner\_work\_actions\HCL-TECH-SOFTWARE\appscan-dast-action\v1.0.7\asoc.ps1"
-
-          if (!(Test-Path $scriptPath)) {
-              Write-Error "asoc.ps1 not found at $scriptPath"
-              exit 1
-          }
-
-          Write-Host "Using patched script at: $scriptPath"
-
-          & $scriptPath `
-            -baseurl "https://blmycldtl446131.nonprod.hclpnp.com" `
-            -asoc_key "${{ secrets.ASOC_KEY }}" `
-            -asoc_secret "${{ secrets.ASOC_SECRET }}" `
-            -application_id "acd3ef50-6276-461d-8514-abc6e7113577" `
-            -dynamic_scan_type "dast" `
-            -starting_URL "https://demo.testfire.net?mode=demo" `
-            -login_method "userpass" `
-            -login_user "jsmith" `
-            -login_password "demo1234" `
-            -network "public" `
-            -fail_for_noncompliance $false `
-            -wait_for_analysis $true
-
-      - name: Upload HCL AppScan HTML Report to GitHub Artifacts
-        uses: actions/upload-artifact@v4
-        if: success() || failure()
+      - name: Run AppScan DAST Scan
+        uses: HCL-TECH-SOFTWARE/appscan-dast-action@v1.0.7
         with:
-          name: AppScan Security Scan HTML Report
+          baseurl:  https://blmycldtl446131.nonprod.hclpnp.com
+          asoc_key: ${{secrets.ASOC_KEY}}
+          asoc_secret: ${{secrets.ASOC_SECRET}}
+          application_id: 1dd70de0-f756-4cd4-bad3-8354731ceff4
+          dynamic_scan_type: dast
+          starting_URL: 'https://demo.testfire.net?mode=demo'
+          login_method: userpass
+          login_user: jsmith
+          login_password: demo1234
+          network: public
+          fail_for_noncompliance: false
+          wait_for_analysis: true
+      - uses: actions/upload-artifact@v4
+        name: Upload HCL AppScan HTML Report to Github Artifacts
+        with:
+          name: AppScan Security Scan HTML Report 
           path: '**/AppScan*.html'
+        if: success() || failure()
