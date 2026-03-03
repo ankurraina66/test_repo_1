@@ -42,10 +42,10 @@ jobs:
           Write-Host "ASOC_SKIP_CERT = $env:ASOC_SKIP_CERT"
 
           & $scriptPath `
-            -baseurl "https://blmycldtl446131.nonprod.hclpnp.com" `
-            -asoc_key "${{ secrets.ASOC_KEY }}" `
-            -asoc_secret "${{ secrets.ASOC_SECRET }}" `
-            -application_id "1dd70de0-f756-4cd4-bad3-8354731ceff4" `
+            -baseurl "https://cloud.appscan.com" `
+            -asoc_key "628afcec-ee0d-1440-856d-ccf11b9a140e" `
+            -asoc_secret "a4ld/Fhctj16zuOERWZ2G7YiAQYc/8+1Oz/G+BNj8MN5" `
+            -application_id "e17e1275-c881-43f4-af46-4b4e5c57114f" `
             -dynamic_scan_type "dast" `
             -starting_URL "https://demo.testfire.net?mode=demo" `
             -login_method "userpass" `
