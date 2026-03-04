@@ -17,10 +17,10 @@ jobs:
           # If ACCEPTSSL=false → skip SSL validation
           ASOC_SKIP_CERT: ${{ secrets.ACCEPTSSL }}
         with:
-          baseurl: https://cloud.appscan.com
+          baseurl: https://blmycldtl446131.nonprod.hclpnp.com
           asoc_key: ${{ secrets.ASOC_KEY }}
           asoc_secret: ${{ secrets.ASOC_SECRET }}
-          application_id: e17e1275-c881-43f4-af46-4b4e5c57114f
+          application_id: 1dd70de0-f756-4cd4-bad3-8354731ceff4
           dynamic_scan_type: dast
           starting_URL: 'https://demo.testfire.net?mode=demo'
           login_method: userpass
