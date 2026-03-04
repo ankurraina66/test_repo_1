@@ -5,22 +5,23 @@ on:
 
 jobs:
   scan:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Run AppScan 360 DAST Scan
         uses: ankurraina66/test_dast_action@main
-      
+
         env:
           # If ACCEPTSSL=false → skip SSL validation
           ASOC_SKIP_CERT: ${{ secrets.ACCEPTSSL }}
+     
         with:
-          baseurl: https://blmycldtl446131.nonprod.hclpnp.com
+          baseurl: https://cloud.appscan.com
           asoc_key: ${{ secrets.ASOC_KEY }}
           asoc_secret: ${{ secrets.ASOC_SECRET }}
-          application_id: 1dd70de0-f756-4cd4-bad3-8354731ceff4
+          application_id: e17e1275-c881-43f4-af46-4b4e5c57114f
           dynamic_scan_type: dast
           starting_URL: 'https://demo.testfire.net?mode=demo'
           login_method: userpass
