@@ -12,10 +12,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Run AppScan 360 DAST Scan
         uses: ankurraina66/test_dast_action@main
-
-        env:
-          # If ACCEPTSSL=false → skip SSL validation
-          ASOC_SKIP_CERT: ${{ secrets.ACCEPTSSL }}
      
         with:
           baseurl: https://cloud.appscan.com
