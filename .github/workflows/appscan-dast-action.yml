@@ -22,7 +22,7 @@ jobs:
 
           Import-Certificate `
             -FilePath $certPath `
-            -CertStoreLocation Cert:\LocalMachine\Root
+            -CertStoreLocation Cert:\CurrentUser\Root
 
           Write-Host "AppScan Root CA certificate installed successfully."
 
