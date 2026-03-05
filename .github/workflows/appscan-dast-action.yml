@@ -10,12 +10,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install AppScan 360 CA certificate
+        run: |
+          echo "${{ secrets.CORP_CA_CERT }}" | base64 -d > appscan-ca.crt
+          sudo cp appscan-ca.crt /usr/local/share/ca-certificates/
+          sudo update-ca-certificates
+
       - name: Run AppScan 360 DAST Scan
         uses: ankurraina66/test_dast_action@main
-      
-        env:
-          # If ACCEPTSSL=false → skip SSL validation
-          ACCEPTSSL: ${{ secrets.ACCEPTSSL }}
         with:
           baseurl: https://blmycldtl446131.nonprod.hclpnp.com
           asoc_key: ${{ secrets.ASOC_KEY }}
@@ -30,9 +33,9 @@ jobs:
           fail_for_noncompliance: false
           wait_for_analysis: true
 
-      - uses: actions/upload-artifact@v4
-        name: Upload HCL AppScan HTML Report to Github Artifacts
+      - name: Upload HCL AppScan HTML Report to Github Artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: AppScan Security Scan HTML Report
           path: '**/AppScan*.html'
-        if: success() || failure()
+        if: always()
