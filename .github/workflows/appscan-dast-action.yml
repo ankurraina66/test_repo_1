@@ -11,20 +11,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install AppScan Root CA Certificate
+      - name: Test AppScan API connectivity
         shell: powershell -ExecutionPolicy Bypass -File {0}
         run: |
-          $certBase64 = "${{ secrets.CORP_CA_CERT }}"
-          $certBytes = [Convert]::FromBase64String($certBase64)
-
-          $certPath = "$env:RUNNER_TEMP\ascp-dart-prime-root-ca.cer"
-          [IO.File]::WriteAllBytes($certPath, $certBytes)
-
-          Import-Certificate `
-            -FilePath $certPath `
-            -CertStoreLocation Cert:\CurrentUser\Root
-
-          Write-Host "AppScan Root CA certificate installed successfully."
+          Write-Host "Testing connectivity to AppScan API..."
+          try {
+            $response = Invoke-WebRequest -Uri "https://blmycldtl446131.nonprod.hclpnp.com/api/v4" -UseBasicParsing
+            Write-Host "Connection successful. Status code:" $response.StatusCode
+          } catch {
+            Write-Host "Connection failed."
+            Write-Host $_.Exception.Message
+            throw
+          }
 
       - name: Run AppScan 360 DAST Scan
         uses: ankurraina66/test_dast_action@main
