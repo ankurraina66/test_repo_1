@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install AppScan Root CA Certificate
-        shell: powershell
+        shell: powershell -ExecutionPolicy Bypass
         run: |
           $certBase64 = "${{ secrets.CORP_CA_CERT }}"
           $certBytes = [Convert]::FromBase64String($certBase64)
