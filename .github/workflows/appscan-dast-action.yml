@@ -11,11 +11,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install AppScan 360 CA certificate
+      - name: Install AppScan Root CA Certificate
+        shell: powershell
         run: |
-          echo "${{ secrets.CORP_CA_CERT }}" | base64 -d > appscan-ca.crt
-          sudo cp appscan-ca.crt /usr/local/share/ca-certificates/
-          sudo update-ca-certificates
+          $certBase64 = "${{ secrets.CORP_CA_CERT }}"
+          $certBytes = [Convert]::FromBase64String($certBase64)
+
+          $certPath = "$env:RUNNER_TEMP\ascp-dart-prime-root-ca.cer"
+          [IO.File]::WriteAllBytes($certPath, $certBytes)
+
+          Import-Certificate `
+            -FilePath $certPath `
+            -CertStoreLocation Cert:\LocalMachine\Root
+
+          Write-Host "AppScan Root CA certificate installed successfully."
 
       - name: Run AppScan 360 DAST Scan
         uses: ankurraina66/test_dast_action@main
