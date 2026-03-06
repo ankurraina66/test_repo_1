@@ -2,6 +2,9 @@ name: "Checkmarx Test on ASoC"
 
 on:
   workflow_dispatch
+permissions:
+  security-events: write
+  contents: read
 
 jobs:
   scan:
