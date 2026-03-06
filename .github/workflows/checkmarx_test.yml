@@ -39,7 +39,7 @@ jobs:
         with:
           sarif_file: appscan-results.sarif
           category: appscan-dast
-          tool_name: "HCL AppScan DAST"
+          
       - uses: actions/upload-artifact@v4
         name: Upload HCL AppScan HTML Report to Github Artifacts
         with:
