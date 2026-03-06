@@ -1,4 +1,4 @@
-name: "HCL AppScan DAST - basic"
+name: "HCL AppScan 360 DAST - basic"
 
 on:
   workflow_dispatch
@@ -10,22 +10,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Test AppScan API connectivity
-        shell: powershell -ExecutionPolicy Bypass -File {0}
-        run: |
-          Write-Host "Testing connectivity to AppScan API..."
-          try {
-            $response = Invoke-WebRequest -Uri "https://blmycldtl446131.nonprod.hclpnp.com/api/v4" -UseBasicParsing
-            Write-Host "Connection successful. Status code:" $response.StatusCode
-          } catch {
-            Write-Host "Connection failed."
-            Write-Host $_.Exception.Message
-            throw
-          }
-
       - name: Run AppScan 360 DAST Scan
         uses: ankurraina66/test_dast_action@main
+      
+        env:
+          # If ACCEPTSSL=false → skip SSL validation
+          ACCEPTSSL: ${{ secrets.ACCEPTSSL }}
         with:
           baseurl: https://blmycldtl446131.nonprod.hclpnp.com
           asoc_key: ${{ secrets.ASOC_KEY }}
@@ -40,9 +30,11 @@ jobs:
           fail_for_noncompliance: false
           wait_for_analysis: true
 
-      - name: Upload HCL AppScan HTML Report to Github Artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
+        name: Upload HCL AppScan HTML Report to Github Artifacts
         with:
           name: AppScan Security Scan HTML Report
           path: '**/AppScan*.html'
-        if: always()
+        if: success() || failure()
+		
+		
