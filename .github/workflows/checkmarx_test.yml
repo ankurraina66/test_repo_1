@@ -1,7 +1,11 @@
 name: "Checkmarx Test on ASoC"
 
 on:
-  workflow_dispatch
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
 permissions:
   security-events: write
   contents: read
@@ -34,6 +38,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: appscan-results.sarif
+          category: appscan-dast
       - uses: actions/upload-artifact@v4
         name: Upload HCL AppScan HTML Report to Github Artifacts
         with:
