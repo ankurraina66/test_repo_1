@@ -1,4 +1,4 @@
-name: "HCL AppScan DAST - basic"
+name: "Checkmarx Test on ASoC"
 
 on:
   workflow_dispatch
@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Run AppScan 360 DAST Scan
+      - name: Checkmarx Test on ASoC
         uses: ankurraina66/checkmarx_test@main
      
         with:
