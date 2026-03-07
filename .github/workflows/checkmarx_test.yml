@@ -1,7 +1,7 @@
 name: "Checkmarx Test on ASoC"
 
 on:
-  workflow_dispatch
+  workflow_dispatch:
   push:
     branches: [ main ]
   pull_request:
