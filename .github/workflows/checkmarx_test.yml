@@ -1,11 +1,11 @@
 name: "Checkmarx Test on ASoC"
 
 on:
-  workflow_dispatch:
+  workflow_dispatch
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
+
 permissions:
   security-events: write
   contents: read
@@ -17,32 +17,38 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Checkmarx Test on ASoC
+
+      - name: Run AppScan
         uses: ankurraina66/checkmarx_test@main
-     
         with:
           baseurl: https://cloud.appscan.com
           asoc_key: ${{ secrets.ASOC_KEY }}
           asoc_secret: ${{ secrets.ASOC_SECRET }}
           application_id: e17e1275-c881-43f4-af46-4b4e5c57114f
           dynamic_scan_type: dast
-          starting_URL: 'https://demo.testfire.net?mode=demo'
+          starting_URL: https://demo.testfire.net?mode=demo
           login_method: userpass
           login_user: jsmith
           login_password: demo1234
           network: public
           fail_for_noncompliance: false
           wait_for_analysis: true
-          
-      - name: Upload SARIF results
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: appscan-results.sarif
-          category: appscan-dast
-          
-      - uses: actions/upload-artifact@v4
-        name: Upload HCL AppScan HTML Report to Github Artifacts
-        with:
-          name: AppScan Security Scan HTML Report
-          path: '**/AppScan*.html'
-        if: success() || failure()
+
+      - name: Encode SARIF
+        id: sarif
+        run: |
+          SARIF_BASE64=$(base64 -w 0 appscan-results.sarif)
+          echo "sarif=$SARIF_BASE64" >> $GITHUB_OUTPUT
+
+      - name: Upload SARIF via GitHub API
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/code-scanning/sarifs \
+            -d '{
+              "commit_sha": "${{ github.sha }}",
+              "ref": "refs/heads/${{ github.ref_name }}",
+              "sarif": "${{ steps.sarif.outputs.sarif }}",
+              "tool_name": "HCL AppScan DAST"
+            }'
