@@ -34,13 +34,16 @@ jobs:
           fail_for_noncompliance: false
           wait_for_analysis: true
 
+      - name: Compress SARIF
+        run: gzip -c appscan-results.sarif > appscan-results.sarif.gz
+
       - name: Encode SARIF
         id: sarif
         run: |
-          SARIF_BASE64=$(base64 -w 0 appscan-results.sarif)
+          SARIF_BASE64=$(base64 -w 0 appscan-results.sarif.gz)
           echo "sarif=$SARIF_BASE64" >> $GITHUB_OUTPUT
 
-      - name: Upload SARIF via GitHub API
+      - name: Upload SARIF via API
         run: |
           curl -X POST \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
