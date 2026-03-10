@@ -1,10 +1,9 @@
-name: "Checkmarx Test on ASoC"
+name: Checkmarx Test on ASoC
 
 on:
-  workflow_dispatch:
   push:
     branches: [ main ]
-  pull_request:
+  workflow_dispatch:
 
 permissions:
   security-events: write
@@ -19,10 +18,6 @@ jobs:
 
       - name: Run AppScan
         uses: ankurraina66/checkmarx_test@main
-        env:
-          GH_APP_ID: ${{ secrets.APPSCAN_GH_APP_ID }}
-          GH_APP_INSTALLATION_ID: ${{ secrets.APPSCAN_GH_APP_INSTALLATION_ID }}
-          GH_APP_PRIVATE_KEY: ${{ secrets.APPSCAN_GH_APP_PRIVATE_KEY }}
         with:
           baseurl: https://cloud.appscan.com
           asoc_key: ${{ secrets.ASOC_KEY }}
@@ -34,5 +29,10 @@ jobs:
           login_user: jsmith
           login_password: demo1234
           network: public
-          fail_for_noncompliance: false
           wait_for_analysis: true
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: appscan-results.sarif
+          category: appscan-dast
