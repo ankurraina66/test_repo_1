@@ -8,7 +8,6 @@ on:
 permissions:
   contents: read
   security-events: write
-  checks: write
 
 jobs:
   scan:
@@ -19,9 +18,7 @@ jobs:
 
       - name: Run AppScan
         uses: ankurraina66/checkmarx_test@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
+               
         with:
           baseurl: https://cloud.appscan.com
           asoc_key: ${{ secrets.ASOC_KEY }}
