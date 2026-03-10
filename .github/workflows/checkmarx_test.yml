@@ -15,11 +15,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Run AppScan
         uses: ankurraina66/checkmarx_test@main
+        env:
+          GH_APP_ID: ${{ secrets.APPSCAN_GH_APP_ID }}
+          GH_APP_INSTALLATION_ID: ${{ secrets.APPSCAN_GH_APP_INSTALLATION_ID }}
+          GH_APP_PRIVATE_KEY: ${{ secrets.APPSCAN_GH_APP_PRIVATE_KEY }}
         with:
           baseurl: https://cloud.appscan.com
           asoc_key: ${{ secrets.ASOC_KEY }}
@@ -33,22 +36,3 @@ jobs:
           network: public
           fail_for_noncompliance: false
           wait_for_analysis: true
-
-      - name: Encode SARIF
-        id: sarif
-        run: |
-          SARIF_BASE64=$(base64 -w 0 appscan-results.sarif)
-          echo "sarif=$SARIF_BASE64" >> $GITHUB_OUTPUT
-
-      - name: Upload SARIF via GitHub API
-        run: |
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/${{ github.repository }}/code-scanning/sarifs \
-            -d '{
-              "commit_sha": "${{ github.sha }}",
-              "ref": "refs/heads/${{ github.ref_name }}",
-              "sarif": "${{ steps.sarif.outputs.sarif }}",
-              "tool_name": "HCL AppScan DAST"
-            }'
