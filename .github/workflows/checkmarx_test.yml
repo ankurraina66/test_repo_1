@@ -1,15 +1,12 @@
 name: Checkmarx Test on ASoC
 
 on:
-  pull_request_target: 
-  push:
-    branches: [ main ]
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
   security-events: write
-  checks: write
   issues: write
 
 jobs:
@@ -18,14 +15,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Run AppScan
         uses: ankurraina66/checkmarx_test@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-               
         with:
           baseurl: https://cloud.appscan.com
           asoc_key: ${{ secrets.ASOC_KEY }}
@@ -39,7 +31,18 @@ jobs:
           network: public
           wait_for_analysis: true
 
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v4
+      - name: Publish AppScan PR Comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
         with:
-          sarif_file: appscan-results.sarif
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('appscan_pr_report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
