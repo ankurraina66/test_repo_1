@@ -1,7 +1,7 @@
 name: Checkmarx Test on ASoC
 
 on:
-  pull_request: 
+  pull_request_target: 
   push:
     branches: [ main ]
   workflow_dispatch:
@@ -18,6 +18,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Run AppScan
         uses: ankurraina66/checkmarx_test@main
