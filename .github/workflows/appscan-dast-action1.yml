@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Run AppScan 360 DAST Scan
         #uses: ankurraina66/test_dast_action@main
-        uses: HCL-TECH-SOFTWARE/appscan-sast-action@v1.0.7
+        uses: HCL-TECH-SOFTWARE/appscan-dast-action@v1.0.7
       
         #env:
           # If ACCEPTSSL=false → skip SSL validation
