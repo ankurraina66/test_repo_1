@@ -1,4 +1,4 @@
-name: Checkmarx Test on ASoC
+name: Build Summary Test
 
 on:
   pull_request: 
