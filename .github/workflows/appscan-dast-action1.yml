@@ -1,4 +1,4 @@
-name: "HCL AppScan DAST - basic"
+name: "HCL AppScan 360 DAST Scan Workflow Yaml"
 
 on:
   workflow_dispatch
