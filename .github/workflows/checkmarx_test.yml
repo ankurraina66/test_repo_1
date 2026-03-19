@@ -21,6 +21,10 @@ jobs:
 
       - name: Run AppScan
         uses: ankurraina66/checkmarx_test@main
+
+        env:
+          # If ACCEPTSSL=true → skip SSL validation
+          ACCEPTSSL: ${{ secrets.ACCEPTSSL }}
                
         with:
           baseurl: https://blmycldtl446131.nonprod.hclpnp.com
