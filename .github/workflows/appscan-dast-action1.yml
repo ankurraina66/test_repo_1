@@ -14,7 +14,7 @@ jobs:
         uses: ankurraina66/test_dast_action@main
               
         env:
-          # If ACCEPTSSL=false → skip SSL validation
+          # If ACCEPTSSL=true → skip SSL validation
           ACCEPTSSL: ${{ secrets.ACCEPTSSL }}
         with:
           baseurl: https://blmycldtl446131.nonprod.hclpnp.com
