@@ -23,10 +23,10 @@ jobs:
         uses: ankurraina66/checkmarx_test@main
                
         with:
-          baseurl: https://cloud.appscan.com
+          baseurl: https://blmycldtl446131.nonprod.hclpnp.com
           asoc_key: ${{ secrets.ASOC_KEY }}
           asoc_secret: ${{ secrets.ASOC_SECRET }}
-          application_id: 16574fc8-59c8-4675-ade2-885877e0a392
+          application_id: 1dd70de0-f756-4cd4-bad3-8354731ceff4
           dynamic_scan_type: dast
           starting_URL: https://demo.testfire.net?mode=demo
           login_method: userpass
