@@ -21,6 +21,8 @@ jobs:
           asoc_secret: ${{secrets.ASOC_SECRET}}
           application_id: 1dd70de0-f756-4cd4-bad3-8354731ceff4
           acceptssl: ${{ secrets.ACCEPTSSL }}
+          service_url: ${{ secrets.SERVICE_URL }}
+          static_analysis_only: ${{ secrets.STATIC_ANALYSIS_ONLY }}
 
       - name: Post AppScan PR comment
         if: github.event_name == 'pull_request'
