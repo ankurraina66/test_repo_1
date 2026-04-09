@@ -20,6 +20,7 @@ jobs:
           asoc_key: ${{secrets.ASOC_KEY}}
           asoc_secret: ${{secrets.ASOC_SECRET}}
           application_id: 16574fc8-59c8-4675-ade2-885877e0a392
+          wait_for_analysis: true
           
       - name: Post AppScan PR comment
         if: github.event_name == 'pull_request'
