@@ -25,6 +25,10 @@ jobs:
 
     steps:
 
+#########################################################
+# Checkout
+#########################################################
+
       - name: Checkout
 
         uses: actions/checkout@v4
@@ -34,12 +38,13 @@ jobs:
           fetch-depth: 0
 
 
-
 #########################################################
 # Run CodeSweep
 #########################################################
 
       - name: Run AppScan CodeSweep
+
+        id: codesweep
 
         uses: HCL-TECH-SOFTWARE/appscan-codesweep-action@v2
 
@@ -51,18 +56,16 @@ jobs:
 
           status: failure
 
-
         env:
 
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
-
 #########################################################
-# Convert job summary to PR comment
+# Create PR summary comment
 #########################################################
 
-      - name: Post CodeSweep results to PR
+      - name: Add CodeSweep summary to PR
 
         if: always()
 
@@ -72,29 +75,16 @@ jobs:
 
           script: |
 
-            const fs = require('fs');
+            const table = `
+            ## AppScan CodeSweep Results
 
-            const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+            CodeSweep analysis completed.
 
-            if (!fs.existsSync(summaryPath)) {
+            View inline findings in the **Files changed** tab.
 
-              console.log("No summary file found");
+            Detected issues will appear directly in the diff view as annotations.
 
-              return;
-
-            }
-
-
-            const summary = fs.readFileSync(summaryPath, 'utf8');
-
-
-            if (!summary.includes("Scan results")) {
-
-              console.log("No CodeSweep findings");
-
-              return;
-
-            }
+            `;
 
 
             await github.rest.issues.createComment({
@@ -105,6 +95,6 @@ jobs:
 
               issue_number: context.payload.pull_request.number,
 
-              body: summary
+              body: table
 
             });
