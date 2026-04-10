@@ -4,7 +4,7 @@ import com.levent.consultantapi.service.InfoService;
 
 public class InfoServiceImpl1 implements InfoService {
 
-	String loginKey = "erwrewrw";
+	String login = "robert_234";
 
 	@Override
 	public String getGreet() {
