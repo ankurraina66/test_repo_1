@@ -1,20 +1,110 @@
 name: "HCL AppScan CodeSweep"
+
 on:
+
   pull_request:
-    types: [opened,synchronize]
+
+    types: [opened, synchronize, reopened]
+
+
+permissions:
+
+  contents: read
+
+  pull-requests: write
+
+  issues: write
+
+
 jobs:
-  scan:
+
+  codesweep:
+
     runs-on: ubuntu-latest
+
+
     steps:
+
       - name: Checkout
-        uses: actions/checkout@v2
+
+        uses: actions/checkout@v4
+
         with:
+
           fetch-depth: 0
+
+
+
+#########################################################
+# Run CodeSweep
+#########################################################
+
       - name: Run AppScan CodeSweep
+
         uses: HCL-TECH-SOFTWARE/appscan-codesweep-action@v2
+
         with:
-          asoc_key: ${{secrets.ASOC_KEY}}
-          asoc_secret: ${{secrets.ASOC_SECRET}}
+
+          asoc_key: ${{ secrets.ASOC_KEY }}
+
+          asoc_secret: ${{ secrets.ASOC_SECRET }}
+
           status: failure
-    env: 
-      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+
+        env:
+
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+
+#########################################################
+# Convert job summary to PR comment
+#########################################################
+
+      - name: Post CodeSweep results to PR
+
+        if: always()
+
+        uses: actions/github-script@v7
+
+        with:
+
+          script: |
+
+            const fs = require('fs');
+
+            const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+
+            if (!fs.existsSync(summaryPath)) {
+
+              console.log("No summary file found");
+
+              return;
+
+            }
+
+
+            const summary = fs.readFileSync(summaryPath, 'utf8');
+
+
+            if (!summary.includes("Scan results")) {
+
+              console.log("No CodeSweep findings");
+
+              return;
+
+            }
+
+
+            await github.rest.issues.createComment({
+
+              owner: context.repo.owner,
+
+              repo: context.repo.repo,
+
+              issue_number: context.payload.pull_request.number,
+
+              body: summary
+
+            });
