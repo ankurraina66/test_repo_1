@@ -24,8 +24,8 @@ public class AppConfig {
 	@Value("${greeter.implementation}")
 	String impl;
 	
-	String username = "user123_name";
-	String password = "aug@2014qwqw";
+	String username = "andy_123";
+	String password = "aug@2014qdf";
 	
 	@Bean
 	public InfoService getImplementationFromPropertiesFile() {
