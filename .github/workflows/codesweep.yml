@@ -7,6 +7,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  checks: read
   issues: write
 
 jobs:
@@ -16,10 +17,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
-#########################################################
-# checkout
-#########################################################
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,7 +29,7 @@ jobs:
 #########################################################
 
       - name: Run AppScan CodeSweep
-        id: scan
+        id: codesweep
 
         uses: HCL-TECH-SOFTWARE/appscan-codesweep-action@v2
 
@@ -46,135 +43,88 @@ jobs:
 
 
 #########################################################
-# fetch issues from ASoC and build PR table
+# read annotations and create PR table
 #########################################################
 
-      - name: Generate PR table
+      - name: Convert findings to PR table
 
         uses: actions/github-script@v7
-
-        env:
-          ASOC_KEY: ${{ secrets.ASOC_KEY }}
-          ASOC_SECRET: ${{ secrets.ASOC_SECRET }}
 
         with:
 
           script: |
 
-            const baseUrl = "https://cloud.appscan.com/api/v4";
+            //--------------------------------------------------
+            // get check runs for this commit
+            //--------------------------------------------------
+
+            const checks = await github.rest.checks.listForRef({
+
+              owner: context.repo.owner,
+
+              repo: context.repo.repo,
+
+              ref: context.payload.pull_request.head.sha
+
+            });
 
 
-            //--------------------------------------------
-            // login
-            //--------------------------------------------
+            //--------------------------------------------------
+            // find codesweep check
+            //--------------------------------------------------
 
-            const loginResponse = await fetch(
+            const cs = checks.data.check_runs.find(
 
-              baseUrl + "/Account/ApiKeyLogin",
-
-              {
-
-                method: "POST",
-
-                headers: {
-
-                  "Content-Type": "application/json"
-
-                },
-
-                body: JSON.stringify({
-
-                  keyId: process.env.ASOC_KEY,
-
-                  keySecret: process.env.ASOC_SECRET,
-
-                  clientType: "codesweep-github"
-
-                })
-
-              }
+              c => c.name.includes("CodeSweep")
 
             );
 
 
-            const login = await loginResponse.json();
+            if(!cs){
 
-            const token = login.token;
-
-
-            //--------------------------------------------
-            // get latest scan
-            //--------------------------------------------
-
-            const scanResponse = await fetch(
-
-              baseUrl + "/Scans?$top=1",
-
-              {
-
-                headers: {
-
-                  Authorization: "Bearer " + token
-
-                }
-
-              }
-
-            );
-
-
-            const scans = await scanResponse.json();
-
-            const scanId = scans.Items[0].Id;
-
-
-            //--------------------------------------------
-            // get issues
-            //--------------------------------------------
-
-            const issuesResponse = await fetch(
-
-              baseUrl + "/Issues/Scan/" + scanId + "?applyPolicies=None",
-
-              {
-
-                headers: {
-
-                  Authorization: "Bearer " + token
-
-                }
-
-              }
-
-            );
-
-
-            const issuesJson = await issuesResponse.json();
-
-            const issues = issuesJson.Items;
-
-
-            //--------------------------------------------
-            // build table
-            //--------------------------------------------
-
-            if(!issues || issues.length === 0){
-
-              console.log("no issues found");
+              console.log("no codesweep check found");
 
               return;
 
             }
 
 
+            //--------------------------------------------------
+            // get annotations
+            //--------------------------------------------------
+
+            const annotations = await github.rest.checks.listAnnotations({
+
+              owner: context.repo.owner,
+
+              repo: context.repo.repo,
+
+              check_run_id: cs.id
+
+            });
+
+
+            if(!annotations.data.length){
+
+              console.log("no findings");
+
+              return;
+
+            }
+
+
+            //--------------------------------------------------
+            // build markdown table
+            //--------------------------------------------------
+
             let rows = "";
 
 
-            for(const i of issues){
+            for(const a of annotations.data){
 
               rows += `
 
-              | ${i.Severity} | ${i.IssueType} | ${i.SourceFile || "-"} | ${i.Line || "-"} |
+              | ${a.annotation_level} | ${a.title} | ${a.path} | ${a.start_line} |
 
               `;
 
@@ -196,9 +146,9 @@ jobs:
             `;
 
 
-            //--------------------------------------------
+            //--------------------------------------------------
             // post PR comment
-            //--------------------------------------------
+            //--------------------------------------------------
 
             await github.rest.issues.createComment({
 
