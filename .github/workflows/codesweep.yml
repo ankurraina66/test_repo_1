@@ -1,0 +1,213 @@
+name: "HCL AppScan CodeSweep"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+
+  codesweep:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+#########################################################
+# checkout
+#########################################################
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+
+#########################################################
+# run codesweep
+#########################################################
+
+      - name: Run AppScan CodeSweep
+        id: scan
+
+        uses: HCL-TECH-SOFTWARE/appscan-codesweep-action@v2
+
+        with:
+          asoc_key: ${{ secrets.ASOC_KEY }}
+          asoc_secret: ${{ secrets.ASOC_SECRET }}
+          status: failure
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+#########################################################
+# fetch issues from ASoC and build PR table
+#########################################################
+
+      - name: Generate PR table
+
+        uses: actions/github-script@v7
+
+        env:
+          ASOC_KEY: ${{ secrets.ASOC_KEY }}
+          ASOC_SECRET: ${{ secrets.ASOC_SECRET }}
+
+        with:
+
+          script: |
+
+            const baseUrl = "https://cloud.appscan.com/api/v4";
+
+
+            //--------------------------------------------
+            // login
+            //--------------------------------------------
+
+            const loginResponse = await fetch(
+
+              baseUrl + "/Account/ApiKeyLogin",
+
+              {
+
+                method: "POST",
+
+                headers: {
+
+                  "Content-Type": "application/json"
+
+                },
+
+                body: JSON.stringify({
+
+                  keyId: process.env.ASOC_KEY,
+
+                  keySecret: process.env.ASOC_SECRET,
+
+                  clientType: "codesweep-github"
+
+                })
+
+              }
+
+            );
+
+
+            const login = await loginResponse.json();
+
+            const token = login.token;
+
+
+            //--------------------------------------------
+            // get latest scan
+            //--------------------------------------------
+
+            const scanResponse = await fetch(
+
+              baseUrl + "/Scans?$top=1",
+
+              {
+
+                headers: {
+
+                  Authorization: "Bearer " + token
+
+                }
+
+              }
+
+            );
+
+
+            const scans = await scanResponse.json();
+
+            const scanId = scans.Items[0].Id;
+
+
+            //--------------------------------------------
+            // get issues
+            //--------------------------------------------
+
+            const issuesResponse = await fetch(
+
+              baseUrl + "/Issues/Scan/" + scanId + "?applyPolicies=None",
+
+              {
+
+                headers: {
+
+                  Authorization: "Bearer " + token
+
+                }
+
+              }
+
+            );
+
+
+            const issuesJson = await issuesResponse.json();
+
+            const issues = issuesJson.Items;
+
+
+            //--------------------------------------------
+            // build table
+            //--------------------------------------------
+
+            if(!issues || issues.length === 0){
+
+              console.log("no issues found");
+
+              return;
+
+            }
+
+
+            let rows = "";
+
+
+            for(const i of issues){
+
+              rows += `
+
+              | ${i.Severity} | ${i.IssueType} | ${i.SourceFile || "-"} | ${i.Line || "-"} |
+
+              `;
+
+            }
+
+
+            const table = `
+
+            ## 🔍 AppScan CodeSweep Findings
+
+
+            | Severity | Issue | File | Line |
+
+            |----------|------|------|------|
+
+            ${rows}
+
+
+            `;
+
+
+            //--------------------------------------------
+            // post PR comment
+            //--------------------------------------------
+
+            await github.rest.issues.createComment({
+
+              owner: context.repo.owner,
+
+              repo: context.repo.repo,
+
+              issue_number: context.payload.pull_request.number,
+
+              body: table
+
+            });
