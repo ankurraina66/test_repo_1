@@ -46,20 +46,10 @@ jobs:
 
 
 #########################################################
-# wait briefly to ensure results available
+# fetch issues from ASoC and build PR table
 #########################################################
 
-      - name: Wait for results
-        run: sleep 20
-
-
-#########################################################
-# fetch issues from ASoC API
-#########################################################
-
-      - name: Get CodeSweep issues
-
-        id: issues
+      - name: Generate PR table
 
         uses: actions/github-script@v7
 
@@ -71,22 +61,28 @@ jobs:
 
           script: |
 
-            const got = require("got");
-
             const baseUrl = "https://cloud.appscan.com/api/v4";
 
 
-            //---------------------------------------------------
+            //--------------------------------------------
             // login
-            //---------------------------------------------------
+            //--------------------------------------------
 
-            const login = await got.post(
+            const loginResponse = await fetch(
 
               baseUrl + "/Account/ApiKeyLogin",
 
               {
 
-                json: {
+                method: "POST",
+
+                headers: {
+
+                  "Content-Type": "application/json"
+
+                },
+
+                body: JSON.stringify({
 
                   keyId: process.env.ASOC_KEY,
 
@@ -94,21 +90,23 @@ jobs:
 
                   clientType: "codesweep-github"
 
-                }
+                })
 
               }
 
-            ).json();
+            );
 
+
+            const login = await loginResponse.json();
 
             const token = login.token;
 
 
-            //---------------------------------------------------
+            //--------------------------------------------
             // get latest scan
-            //---------------------------------------------------
+            //--------------------------------------------
 
-            const scans = await got.get(
+            const scanResponse = await fetch(
 
               baseUrl + "/Scans?$top=1",
 
@@ -122,17 +120,19 @@ jobs:
 
               }
 
-            ).json();
+            );
 
+
+            const scans = await scanResponse.json();
 
             const scanId = scans.Items[0].Id;
 
 
-            //---------------------------------------------------
+            //--------------------------------------------
             // get issues
-            //---------------------------------------------------
+            //--------------------------------------------
 
-            const issues = await got.get(
+            const issuesResponse = await fetch(
 
               baseUrl + "/Issues/Scan/" + scanId + "?applyPolicies=None",
 
@@ -146,26 +146,17 @@ jobs:
 
               }
 
-            ).json();
+            );
 
 
-            return issues.Items;
+            const issuesJson = await issuesResponse.json();
+
+            const issues = issuesJson.Items;
 
 
-#########################################################
-# create PR table
-#########################################################
-
-      - name: Create PR table
-
-        uses: actions/github-script@v7
-
-        with:
-
-          script: |
-
-            const issues = ${{ steps.issues.outputs.result }};
-
+            //--------------------------------------------
+            // build table
+            //--------------------------------------------
 
             if(!issues || issues.length === 0){
 
@@ -183,7 +174,7 @@ jobs:
 
               rows += `
 
-              | ${i.Severity} | ${i.IssueType} | ${i.File} | ${i.Line} |
+              | ${i.Severity} | ${i.IssueType} | ${i.SourceFile || "-"} | ${i.Line || "-"} |
 
               `;
 
@@ -204,6 +195,10 @@ jobs:
 
             `;
 
+
+            //--------------------------------------------
+            // post PR comment
+            //--------------------------------------------
 
             await github.rest.issues.createComment({
 
