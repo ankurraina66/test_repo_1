@@ -17,6 +17,8 @@ import com.levent.consultantapi.service.ConsultantService;
 public class ConsultantServiceImpl implements ConsultantService {
 
 	String password = "sdfds";
+	String username = "dummy";
+	
 	@Autowired
 	private ConsultantRepository consultantRepository;
 
