@@ -6,8 +6,8 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
   checks: read
+  pull-requests: write
   issues: write
 
 jobs:
@@ -18,6 +18,10 @@ jobs:
 
     steps:
 
+#########################################################
+# Checkout repository
+#########################################################
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -25,7 +29,7 @@ jobs:
 
 
 #########################################################
-# run codesweep
+# Run CodeSweep scan
 #########################################################
 
       - name: Run AppScan CodeSweep
@@ -43,10 +47,18 @@ jobs:
 
 
 #########################################################
-# read annotations and create PR table
+# wait briefly to allow annotations to register
 #########################################################
 
-      - name: Convert findings to PR table
+      - name: Wait for annotations
+        run: sleep 20
+
+
+#########################################################
+# Convert annotations into PR table
+#########################################################
+
+      - name: Create CodeSweep PR table
 
         uses: actions/github-script@v7
 
@@ -54,110 +66,123 @@ jobs:
 
           script: |
 
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const prNumber = context.payload.pull_request.number;
+            const sha = context.payload.pull_request.head.sha;
+
             //--------------------------------------------------
-            // get check runs for this commit
+            // fetch check runs for commit
             //--------------------------------------------------
 
             const checks = await github.rest.checks.listForRef({
-
-              owner: context.repo.owner,
-
-              repo: context.repo.repo,
-
-              ref: context.payload.pull_request.head.sha
-
+              owner,
+              repo,
+              ref: sha
             });
 
-
             //--------------------------------------------------
-            // find codesweep check
+            // find codesweep check run
             //--------------------------------------------------
 
-            const cs = checks.data.check_runs.find(
-
+            const codesweepCheck = checks.data.check_runs.find(
               c => c.name.includes("CodeSweep")
-
             );
 
+            if (!codesweepCheck) {
 
-            if(!cs){
-
-              console.log("no codesweep check found");
-
+              console.log("No CodeSweep check found");
               return;
 
             }
 
-
             //--------------------------------------------------
-            // get annotations
+            // fetch annotations
             //--------------------------------------------------
 
             const annotations = await github.rest.checks.listAnnotations({
-
-              owner: context.repo.owner,
-
-              repo: context.repo.repo,
-
-              check_run_id: cs.id
-
+              owner,
+              repo,
+              check_run_id: codesweepCheck.id
             });
 
+            if (!annotations.data.length) {
 
-            if(!annotations.data.length){
-
-              console.log("no findings");
-
+              console.log("No findings detected");
               return;
 
             }
 
-
             //--------------------------------------------------
-            // build markdown table
+            // build markdown table rows
             //--------------------------------------------------
 
             let rows = "";
 
+            for (const a of annotations.data) {
 
-            for(const a of annotations.data){
+              const severity = a.annotation_level || "warning";
+              const issue = a.title || "Unknown";
+              const file = a.path || "-";
+              const line = a.start_line || "-";
 
-              rows += `
-
-              | ${a.annotation_level} | ${a.title} | ${a.path} | ${a.start_line} |
-
-              `;
+              rows += "| "
+                + severity
+                + " | "
+                + issue
+                + " | "
+                + file
+                + " | "
+                + line
+                + " |\n";
 
             }
 
+            //--------------------------------------------------
+            // markdown comment
+            //--------------------------------------------------
 
-            const table = `
-
-            ## 🔍 AppScan CodeSweep Findings
-
-
-            | Severity | Issue | File | Line |
-
-            |----------|------|------|------|
-
-            ${rows}
-
-
-            `;
+            const body =
+              "## 🔍 HCL AppScan CodeSweep Findings\n\n"
+              + "| Severity | Issue | File | Line |\n"
+              + "|----------|------|------|------|\n"
+              + rows
+              + "\n"
+              + "Inline annotations are also visible in the **Files changed** tab.\n";
 
 
             //--------------------------------------------------
-            // post PR comment
+            // update existing PR comment if present
             //--------------------------------------------------
 
-            await github.rest.issues.createComment({
-
-              owner: context.repo.owner,
-
-              repo: context.repo.repo,
-
-              issue_number: context.payload.pull_request.number,
-
-              body: table
-
+            const comments = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: prNumber
             });
+
+            const existing = comments.data.find(
+              c => c.body.includes("HCL AppScan CodeSweep Findings")
+            );
+
+            if (existing) {
+
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body
+              });
+
+            } else {
+
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body
+              });
+
+            }
+
+            console.log("PR table created successfully");
