@@ -6,7 +6,6 @@ on:
 
 permissions:
   contents: read
-  checks: read
   pull-requests: write
   issues: write
 
@@ -19,7 +18,7 @@ jobs:
     steps:
 
 #########################################################
-# checkout repo
+# checkout
 #########################################################
 
       - name: Checkout
@@ -29,11 +28,12 @@ jobs:
 
 
 #########################################################
-# run codesweep scan
+# run codesweep
 #########################################################
 
-      - name: Run AppScan CodeSweep
-        id: codesweep
+      - name: Run CodeSweep
+
+        id: scan
 
         uses: HCL-TECH-SOFTWARE/appscan-codesweep-action@v2
 
@@ -47,18 +47,21 @@ jobs:
 
 
 #########################################################
-# wait to ensure annotations available
+# debug - list files generated
 #########################################################
 
-      - name: wait for annotations
-        run: sleep 25
+      - name: Debug files
+
+        run: |
+          echo "Listing generated files"
+          find . -type f | grep -i codesweep || true
 
 
 #########################################################
-# create PR table
+# build PR table from CodeSweep JSON
 #########################################################
 
-      - name: Create PR comment table
+      - name: Create PR table
 
         uses: actions/github-script@v7
 
@@ -66,108 +69,143 @@ jobs:
 
           script: |
 
+            const fs = require('fs');
+            const path = require('path');
+
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const prNumber = context.payload.pull_request.number;
-            const sha = context.payload.pull_request.head.sha;
+            const pr = context.payload.pull_request.number;
 
-            //---------------------------------------------
-            // fetch all check runs for commit
-            //---------------------------------------------
+            //--------------------------------------------------
+            // search workspace for codesweep result json
+            //--------------------------------------------------
 
-            const checks = await github.rest.checks.listForRef({
+            function findFile(dir){
 
-              owner,
-              repo,
-              ref: sha
+              const files = fs.readdirSync(dir);
 
-            });
+              for(const f of files){
 
-            //---------------------------------------------
-            // find CodeSweep check
-            //---------------------------------------------
+                const full =
+                  path.join(dir, f);
 
-            const codesweepCheck =
-              checks.data.check_runs.find(
+                if(fs.statSync(full).isDirectory()){
 
-                c => c.name.toLowerCase().includes("codesweep")
+                  const found =
+                    findFile(full);
 
+                  if(found)
+                    return found;
+
+                }
+
+                if(f.toLowerCase().includes("codesweep")
+                   && f.endsWith(".json")){
+
+                  return full;
+
+                }
+
+              }
+
+            }
+
+            const resultFile =
+              findFile(process.cwd());
+
+            if(!resultFile){
+
+              console.log("No CodeSweep json found");
+
+              return;
+
+            }
+
+            console.log("Using file:", resultFile);
+
+            //--------------------------------------------------
+            // read results
+            //--------------------------------------------------
+
+            const data =
+              JSON.parse(
+                fs.readFileSync(
+                  resultFile,
+                  "utf8"
+                )
               );
 
-            if(!codesweepCheck){
+            const issues =
+              data?.issues
+              || data?.results
+              || [];
 
-              console.log("codesweep check not found");
+            if(!issues.length){
+
+              console.log("No issues");
+
               return;
 
             }
 
-            //---------------------------------------------
-            // get annotations
-            //---------------------------------------------
-
-            const annotations =
-              await github.rest.checks.listAnnotations({
-
-                owner,
-                repo,
-                check_run_id: codesweepCheck.id
-
-              });
-
-            if(!annotations.data.length){
-
-              console.log("no findings found");
-              return;
-
-            }
-
-            //---------------------------------------------
-            // build markdown table
-            //---------------------------------------------
+            //--------------------------------------------------
+            // build table rows
+            //--------------------------------------------------
 
             let rows = "";
 
-            for(const a of annotations.data){
+            for(const i of issues){
 
-              const severity = a.annotation_level || "warning";
+              const sev =
+                i.severity
+                || i.level
+                || "warning";
 
-              const title = a.title || "issue";
+              const title =
+                i.rule
+                || i.title
+                || i.name
+                || "issue";
 
-              const file = a.path || "-";
+              const file =
+                i.file
+                || i.path
+                || "-";
 
-              const line = a.start_line || "-";
+              const line =
+                i.line
+                || i.startLine
+                || "-";
 
               rows +=
-                "| " + severity
-                + " | "
-                + title
-                + " | "
-                + file
-                + " | "
-                + line
-                + " |\n";
+                `| ${sev} | ${title} | ${file} | ${line} |\n`;
 
             }
 
-            const body =
-              "## 🔍 HCL AppScan CodeSweep Findings\n\n"
-              + "| Severity | Issue | File | Line |\n"
-              + "|----------|------|------|------|\n"
-              + rows
-              + "\n"
-              + "Inline results are also visible in the Files changed tab.\n";
+            //--------------------------------------------------
+            // markdown
+            //--------------------------------------------------
 
+            const body = `
 
-            //---------------------------------------------
-            // create or update PR comment
-            //---------------------------------------------
+            ## 🔍 AppScan CodeSweep Findings
+
+            | Severity | Issue | File | Line |
+            |----------|------|------|------|
+            ${rows}
+
+            `;
+
+            //--------------------------------------------------
+            // update PR comment
+            //--------------------------------------------------
 
             const comments =
               await github.rest.issues.listComments({
 
                 owner,
                 repo,
-                issue_number: prNumber
+                issue_number: pr
 
               });
 
@@ -176,7 +214,7 @@ jobs:
 
                 c =>
                   c.body.includes(
-                    "HCL AppScan CodeSweep Findings"
+                    "AppScan CodeSweep Findings"
                   )
 
               );
@@ -200,11 +238,11 @@ jobs:
 
                 owner,
                 repo,
-                issue_number: prNumber,
+                issue_number: pr,
                 body
 
               });
 
             }
 
-            console.log("PR table created successfully");
+            console.log("PR table created");
