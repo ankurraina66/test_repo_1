@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  security-events: read
   pull-requests: write
   issues: write
 
@@ -31,9 +32,7 @@ jobs:
 # run codesweep
 #########################################################
 
-      - name: Run CodeSweep
-
-        id: scan
+      - name: Run AppScan CodeSweep
 
         uses: HCL-TECH-SOFTWARE/appscan-codesweep-action@v2
 
@@ -47,18 +46,15 @@ jobs:
 
 
 #########################################################
-# debug - list files generated
+# wait for GitHub to register results
 #########################################################
 
-      - name: Debug files
-
-        run: |
-          echo "Listing generated files"
-          find . -type f | grep -i codesweep || true
+      - name: wait for results
+        run: sleep 40
 
 
 #########################################################
-# build PR table from CodeSweep JSON
+# create PR table from GitHub Code Scanning alerts
 #########################################################
 
       - name: Create PR table
@@ -69,122 +65,63 @@ jobs:
 
           script: |
 
-            const fs = require('fs');
-            const path = require('path');
-
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const pr = context.payload.pull_request.number;
 
-            //--------------------------------------------------
-            // search workspace for codesweep result json
-            //--------------------------------------------------
+            //--------------------------------------------
+            // get code scanning alerts for this PR
+            //--------------------------------------------
 
-            function findFile(dir){
+            const alerts =
+              await github.rest.codeScanning.listAlertsForRepo({
 
-              const files = fs.readdirSync(dir);
+                owner,
+                repo,
+                state: "open"
 
-              for(const f of files){
+              });
 
-                const full =
-                  path.join(dir, f);
+            if(!alerts.data.length){
 
-                if(fs.statSync(full).isDirectory()){
-
-                  const found =
-                    findFile(full);
-
-                  if(found)
-                    return found;
-
-                }
-
-                if(f.toLowerCase().includes("codesweep")
-                   && f.endsWith(".json")){
-
-                  return full;
-
-                }
-
-              }
-
-            }
-
-            const resultFile =
-              findFile(process.cwd());
-
-            if(!resultFile){
-
-              console.log("No CodeSweep json found");
-
+              console.log("no alerts found");
               return;
 
             }
 
-            console.log("Using file:", resultFile);
-
-            //--------------------------------------------------
-            // read results
-            //--------------------------------------------------
-
-            const data =
-              JSON.parse(
-                fs.readFileSync(
-                  resultFile,
-                  "utf8"
-                )
-              );
-
-            const issues =
-              data?.issues
-              || data?.results
-              || [];
-
-            if(!issues.length){
-
-              console.log("No issues");
-
-              return;
-
-            }
-
-            //--------------------------------------------------
+            //--------------------------------------------
             // build table rows
-            //--------------------------------------------------
+            //--------------------------------------------
 
             let rows = "";
 
-            for(const i of issues){
+            for(const a of alerts.data){
 
-              const sev =
-                i.severity
-                || i.level
+              const severity =
+                a.rule.security_severity_level
+                || a.rule.severity
                 || "warning";
 
               const title =
-                i.rule
-                || i.title
-                || i.name
-                || "issue";
+                a.rule.description
+                || a.rule.name;
 
               const file =
-                i.file
-                || i.path
-                || "-";
+                a.most_recent_instance
+                 ?.location
+                 ?.path
+                 || "-";
 
               const line =
-                i.line
-                || i.startLine
-                || "-";
+                a.most_recent_instance
+                 ?.location
+                 ?.start_line
+                 || "-";
 
               rows +=
-                `| ${sev} | ${title} | ${file} | ${line} |\n`;
+                `| ${severity} | ${title} | ${file} | ${line} |\n`;
 
             }
-
-            //--------------------------------------------------
-            // markdown
-            //--------------------------------------------------
 
             const body = `
 
@@ -196,9 +133,9 @@ jobs:
 
             `;
 
-            //--------------------------------------------------
-            // update PR comment
-            //--------------------------------------------------
+            //--------------------------------------------
+            // create or update comment
+            //--------------------------------------------
 
             const comments =
               await github.rest.issues.listComments({
@@ -244,5 +181,3 @@ jobs:
               });
 
             }
-
-            console.log("PR table created");
