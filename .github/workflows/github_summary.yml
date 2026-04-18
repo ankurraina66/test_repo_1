@@ -32,7 +32,7 @@ jobs:
       # SAST scan for BOTH push and PR
       - name: Run AppScan SAST scan
 
-        uses: ankurraina66/test_sast_action_orca@test
+        uses: ankurraina66/test_sast_action_orca@main
 
         with:
 
