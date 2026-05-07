@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
 
 
-      # SAST scan for BOTH push and PR
+      # Run AppScan SAST scan
       - name: Run AppScan SAST scan
 
         uses: ankurraina66/test_sast_action_orca@main
@@ -44,17 +44,13 @@ jobs:
 
           wait_for_analysis: true
 
-          # NEW → identify PR scans
-          is_pr_scan: ${{ github.event_name == 'pull_request' }}
-
-          pr_number: ${{ github.event.pull_request.number }}
-
-          repo_name: ${{ github.repository }}
-
-          branch_name: ${{ github.head_ref || github.ref_name }}
+          # Optional:
+          # true  -> generate SARIF + GitHub Security integration
+          # false -> disable SARIF generation
+          enable_github_security: true
 
 
-
+      # Upload SARIF only if generated
       - name: Upload SARIF to GitHub Security tab
 
         if: always() && hashFiles('appscan-results.sarif') != ''
@@ -65,16 +61,30 @@ jobs:
 
           sarif_file: appscan-results.sarif
 
-      - name: Upload PR report
-        if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-           name: appscan-pr-report
-           path: appscan-pr-report.html
 
-      - name: Upload Build report
-        if: github.event_name != 'pull_request'
+      # Upload PR HTML report
+      - name: Upload PR report
+
+        if: github.event_name == 'pull_request'
+
         uses: actions/upload-artifact@v4
+
         with:
+
+          name: appscan-pr-report
+
+          path: appscan-pr-report.html
+
+
+      # Upload build summary HTML report
+      - name: Upload Build report
+
+        if: github.event_name != 'pull_request'
+
+        uses: actions/upload-artifact@v4
+
+        with:
+
           name: appscan-build-report
+
           path: appscan-build-summary-report.html
