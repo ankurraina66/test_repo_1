@@ -47,7 +47,7 @@ jobs:
           # Optional:
           # true  -> generate SARIF + GitHub Security integration
           # false -> disable SARIF generation
-          enable_github_security: true
+          enable_github_security: false
 
 
       # Upload SARIF only if generated
