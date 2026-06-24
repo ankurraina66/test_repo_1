@@ -21,7 +21,7 @@ jobs:
 
   scan:
 
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
 
@@ -37,33 +37,8 @@ jobs:
         with:
 
           asoc_key: ${{ secrets.ASOC_KEY }}
-
           asoc_secret: ${{ secrets.ASOC_SECRET }}
-          service_url: ${{ secrets.SERVICE_URL}}
-          acceptssl: ${{ secrets.ACCEPTSSL}}
-          static_analysis_only: true
-
-          application_id: 1dd70de0-f756-4cd4-bad3-8354731ceff4
-
-          wait_for_analysis: true
-
-          # Optional:
-          # true  -> generate SARIF + GitHub Security integration
-          # false -> disable SARIF generation
-          enable_github_security: true
-
-
-      # Upload SARIF only if generated
-      - name: Upload SARIF to GitHub Security tab
-
-        if: always() && hashFiles('appscan-results.sarif') != ''
-
-        uses: github/codeql-action/upload-sarif@v4
-
-        with:
-
-          sarif_file: appscan-results.sarif
-
+          application_id: 21b194f5-cea5-4ff6-a4d1-a03103a3e2fb
 
       # Upload PR HTML report
       - name: Upload PR report
