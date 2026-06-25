@@ -24,6 +24,9 @@ public class ConsultantController {
 	@Autowired
 	private InfoService greeter;
 
+	String password = "hello_123";
+	String secretKey = "adsad898kjsh";
+
 	public ConsultantController() {
 	}
 
